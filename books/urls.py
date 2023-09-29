@@ -1,6 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from . import views
+from books.views import CombinedNarration
 
 # Create a router and register our viewsets with it.
 router = DefaultRouter()
@@ -23,6 +24,6 @@ urlpatterns = [
         ),
         name='recordings'
     ),
-    
+    path('combined-narrations/',CombinedNarration.as_view({'post': 'create'}), name='combined-narrations'),
 
 ]

@@ -26,9 +26,6 @@ from wagtail.admin import urls as wagtailadmin_urls
 from wagtail.api.v2.views import PagesAPIViewSet
 from wagtail.contrib.sitemaps import Sitemap
 from wagtail.documents import urls as wagtaildocs_urls
-
-from books.views import CombinedNarrations
-
 from apps.web.sitemaps import StaticViewSitemap
 
 PagesAPIViewSet.schema = None  # hacky workaround for https://github.com/wagtail/wagtail/issues/8583
@@ -69,8 +66,6 @@ urlpatterns = [
     path("cms/", include(wagtailadmin_urls)),
     path("documents/", include(wagtaildocs_urls)),
     path("content/", include(wagtail_urls)),
-
-    path('combined-narrations/',CombinedNarrations.as_view({'post': 'create'}), name='combined-narrations'),
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

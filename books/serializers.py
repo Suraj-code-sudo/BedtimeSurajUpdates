@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Book, Narration, Page, RecordingRequest, Recording, RequestStatus, CombinedNarrations, CombineVideo
+from .models import Book, Narration, Page, RecordingRequest, Recording, RequestStatus, CombineVideo
 
 
 class NarrationSerializer(serializers.ModelSerializer):
@@ -76,8 +76,8 @@ class RecordingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recording
         fields = (
-            'audio', 'timestamps', 'book',
-            'request', 'narrator_name'
+            'user', 'book',
+            'narrator_name', 'finalVideo'
         )
 
 class NarrationSerializer(serializers.ModelSerializer):
@@ -86,10 +86,6 @@ class NarrationSerializer(serializers.ModelSerializer):
         model = Narration
         fields = ['audio', 'timestamps', 'book', 'narrator_name', 'public']
 
-class CombinedSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = CombinedNarrations
-        fields = ['user', 'book', 'narratorName', 'finalVideo']
 
 class CombineVideoSerializer(serializers.ModelSerializer):
     class Meta:

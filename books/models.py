@@ -2,6 +2,7 @@ from django.db import models
 import uuid
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
+from django.contrib.auth.models import User
 
 
 def upload_location(instance, filename):
@@ -28,6 +29,10 @@ class Book(models.Model):
     # Thumnail will be a smaller version of the cover.
     thumbnail = models.ImageField(null=True, blank=True)
 
+    is_deleted = models.BooleanField(default = False)
+    created_at = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True, blank=True, null=True)
+
     class Meta:
         ordering = ["title"]
 
@@ -36,10 +41,15 @@ class Book(models.Model):
 
 
 class Page(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="pages")
     book = models.ForeignKey("Book", on_delete=models.CASCADE, related_name="pages")
     page_number = models.PositiveIntegerField()
     label = models.CharField(max_length=10)
     image = models.FileField(upload_to=upload_video)
+
+    is_deleted = models.BooleanField(default = False)
+    created_at = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True, blank=True, null=True)
 
     class Meta:
         ordering = ["book", "page_number"]
@@ -52,8 +62,13 @@ class CustomizedBook(models.Model):
     book = models.ForeignKey("Book", on_delete=models.CASCADE)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="customized_books")
 
+    is_deleted = models.BooleanField(default = False)
+    created_at = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True, blank=True, null=True)
+
 
 class Narration(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="narrations")
     book = models.ForeignKey("Book", on_delete=models.CASCADE, related_name="narrations")
 
     narrator_name = models.CharField(max_length=200)
@@ -66,6 +81,10 @@ class Narration(models.Model):
         "CustomizedBook", null=True, blank=True, on_delete=models.CASCADE, related_name="narrations"
     )
 
+    is_deleted = models.BooleanField(default = False)
+    created_at = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True, blank=True, null=True)
+
     class Meta:
         ordering = ["book", "pk"]
 
@@ -77,6 +96,7 @@ class RequestStatus(models.IntegerChoices):
 
 
 class RecordingRequest(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="recording_requests")
     # Use UUID for id so we can generate a unique link for each request that is not guessable.
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="recording_requests")
@@ -88,16 +108,30 @@ class RecordingRequest(models.Model):
 
     status = models.IntegerField(choices=RequestStatus.choices, default=RequestStatus.NEW)
 
-    created_at = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
+
+    is_deleted = models.BooleanField(default = False)
+    created_at = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True, blank=True, null=True)
 
     # TODO: add expiration date (e.g. only valid for 2 weeks)
 
     class Meta:
         ordering = ["user", "-created_at"]
 
+class RecordingRequestStatus(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="recordingRequestStatus")
+    recordingRequest = models.ForeignKey("RecordingRequest", on_delete=models.CASCADE, related_name="recordingRequestStatus")
+    status = models.IntegerField(choices=RequestStatus.choices, default=RequestStatus.NEW)
+
+    is_deleted = models.BooleanField(default = False)
+    created_at = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True, blank=True, null=True)
+
+
 
 class Recording(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="recordings")
     narrator_name = models.CharField(max_length=100, null=True, blank=True)
     audio = models.FileField(upload_to=upload_location)
     timestamps = models.JSONField()
@@ -105,9 +139,11 @@ class Recording(models.Model):
 
     book = models.ForeignKey("Book", on_delete=models.CASCADE, related_name="recordings", null=True, blank=True)
     request = models.ForeignKey('RecordingRequest', on_delete=models.CASCADE, related_name="recordings", null=True, blank=True)
-    
-    created_at = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
+    
+    is_deleted = models.BooleanField(default = False)
+    created_at = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True, blank=True, null=True)
 
     class Meta:
         ordering = ["user", "-created_at"]
@@ -117,15 +153,24 @@ class Narrator(models.Model):
     book = models.ForeignKey("Book", on_delete=models.CASCADE, related_name="narrator", null=True, blank=True)
     narratorName = models.CharField(max_length=200)
 
+    is_deleted = models.BooleanField(default = False)
+    created_at = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True, blank=True, null=True)
+
     def __str__(self):
         return f"Narrator : {self.narratorName}"
     
-class CombinedNarrations(models.Model):
+class CombinedNarration(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="combined")
     book = models.ForeignKey("Book", on_delete=models.CASCADE, related_name="combined", null=True, blank=True)
-    narratorName = models.ForeignKey("Narrator", on_delete=models.CASCADE, related_name="combined")
+    narrator = models.ForeignKey("Narrator", on_delete=models.CASCADE, related_name="combined")
     finalVideo = models.FileField(upload_to='upload_video')
-    created_at = models.DateTimeField(auto_now_add=True)
+    timestamps = models.JSONField()
+
+    is_deleted = models.BooleanField(default = False)
+    created_at = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True, blank=True, null=True)
+
     
     class Meta:
         ordering = ["book", "created_at"]
@@ -137,6 +182,10 @@ class CombineVideo(models.Model):
     pages = models.FileField(upload_to=upload_video)
     audio = models.FileField(upload_to=upload_location)
     narrator = models.ForeignKey("Narrator", on_delete=models.CASCADE, related_name="comvideo")
+    timestamps = models.JSONField(null=True)
 
-
+    combinedNarration = models.ForeignKey("CombinedNarration", on_delete=models.CASCADE, related_name="comvideo", blank=True, null=True)
+    is_deleted = models.BooleanField(default = False)
+    created_at = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True, blank=True, null=True)
 
